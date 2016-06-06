@@ -47,6 +47,12 @@ public class MainActivityFragment extends Fragment {
     String format = "json";
     String units = "metric";
 
+    int numOfDays = 7;
+
+    public static final String ERROR_TAG = MainActivity.class.getSimpleName();
+
+    private ArrayAdapter<String> adapter;
+
     FetchForecastTask fetchForecastTask;
 
     public void updateWeather(){
@@ -65,12 +71,6 @@ public class MainActivityFragment extends Fragment {
         super.onStart();
         updateWeather();
     }
-
-    int numOfDays = 7;
-
-    public static final String ERROR_TAG = MainActivity.class.getSimpleName();
-
-    private ArrayAdapter<String> adapter;
 
     public MainActivityFragment() {
     }
