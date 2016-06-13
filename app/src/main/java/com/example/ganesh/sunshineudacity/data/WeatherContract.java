@@ -4,8 +4,6 @@ import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
-import java.net.URI;
-
 /**
  * Created by Ganesh Prasad on 06-06-2016.
  */

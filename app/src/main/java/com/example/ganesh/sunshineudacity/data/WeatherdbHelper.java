@@ -45,7 +45,7 @@ public class WeatherdbHelper extends SQLiteOpenHelper {
                 WeatherEntry.COLUMN_DEGREES + " REAL NOT NULL," +
 
                 "FOREIGN KEY (" + WeatherEntry.COLUMN_LOC_KEY + ") REFERENCES " +
-                LocationEntry.TABLE_NAME + "(" + LocationEntry._ID + ")," +
+                LocationEntry.TABLE_NAME + "(" + LocationEntry._ID + ") ," +
 
                 "UNIQUE (" + WeatherEntry.COLUMN_DATE + ", " + WeatherEntry.COLUMN_LOC_KEY +
                 ") ON CONFLICT REPLACE);";
