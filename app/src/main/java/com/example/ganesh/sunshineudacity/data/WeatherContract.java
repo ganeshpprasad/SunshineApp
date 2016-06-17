@@ -4,6 +4,10 @@ import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by Ganesh Prasad on 06-06-2016.
  */
@@ -66,7 +70,11 @@ public class WeatherContract {
         }
 
         public static String getDateFromUri(Uri uri) {
-            return uri.getPathSegments().get(2);
+            if ( uri.getPathSegments().get(2) != null ) {
+                return uri.getPathSegments().get(2);
+            } else {
+                return null;
+            }
         }
 
         public static String getStartDateFromUri(Uri uri) {
@@ -95,6 +103,22 @@ public class WeatherContract {
             return ContentUris.withAppendedId(CONTENT_URI , _id);
         }
 
+    }
+
+    static String DATE_FORMAT = "ddMMyyyy";
+
+    public static String getdbDateString(Date date){
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+        return sdf.format(date);
+    }
+
+    public static Date getDateFromDb(String date){
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+        try {
+            return sdf.parse(date);
+        } catch (ParseException e) {
+            return null;
+        }
     }
 
 }

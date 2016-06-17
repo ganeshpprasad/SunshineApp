@@ -5,23 +5,21 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.test.AndroidTestCase;
 import android.util.Log;
-import android.view.MenuInflater;
 
-import com.example.ganesh.sunshineudacity.data.WeatherContract.WeatherEntry;
 import com.example.ganesh.sunshineudacity.data.WeatherContract.LocationEntry;
+import com.example.ganesh.sunshineudacity.data.WeatherContract.WeatherEntry;
 import com.example.ganesh.sunshineudacity.data.WeatherdbHelper;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 
 /**
  * Created by Ganesh Prasad on 12-06-2016.
  */
-public class Testdb extends AndroidTestCase {
+public class TestProvider extends AndroidTestCase {
 
-    public void testCreateDb() throws Throwable {
+    public void testDeleteDb() throws Throwable {
 
         mContext.deleteDatabase(WeatherdbHelper.DATABASE_NAME);
         SQLiteDatabase db = new WeatherdbHelper(this.mContext).getWritableDatabase();

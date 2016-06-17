@@ -1,13 +1,17 @@
 package com.example.ganesh.sunshineudacity;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.preference.Preference;
-import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,77 +20,97 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.example.ganesh.sunshineudacity.data.WeatherContract;
+import com.example.ganesh.sunshineudacity.data.WeatherContract.WeatherEntry;
+import com.example.ganesh.sunshineudacity.data.WeatherContract.LocationEntry;
+
 import java.util.Date;
-import java.util.List;
 
-public class MainActivityFragment extends Fragment {
+/**
+ * Encapsulates fetching the forecast and displaying it as a {@link android.widget.ListView} layout.
+ */
+public class MainActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    String JSONforecast;
-    BufferedReader reader;
-    HttpURLConnection urlConnection = null;
+    private SimpleCursorAdapter mForecastAdapter;
+    private static final int FORECAST_LOADER = 0;
+    private String mLocation;
+    private ListView mListView;
 
-    String format = "json";
-    String units = "metric";
+    // For the forecast view we're showing only a small subset of the stored data.
+    // Specify the columns we need.
+    private static final String[] FORECAST_COLUMNS = {
+            // In this case the id needs to be fully qualified with a table name, since
+            // the content provider joins the location & weather tables in the background
+            // (both have an _id column)
+            // On the one hand, that's annoying.  On the other, you can search the weather table
+            // using the location set by the user, which is only in the Location table.
+            // So the convenience is worth it.
+            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
+            WeatherEntry.COLUMN_DATE,
+            WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherEntry.COLUMN_MIN_TEMP,
+            LocationEntry.COLUMN_LOCATION_SETTING,
+            WeatherEntry.COLUMN_WEATHER_ID
+    };
 
-    int numOfDays = 7;
 
-    public static final String ERROR_TAG = MainActivity.class.getSimpleName();
-
-    private ArrayAdapter<String> adapter;
-
-    FetchForecastTask fetchForecastTask;
-
-    public void updateWeather(){
-
-        fetchForecastTask = new FetchForecastTask();
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        String location = prefs.getString( "location" , "London" );
-
-        fetchForecastTask.execute(location);
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        updateWeather();
-    }
+    // These indices are tied to FORECAST_COLUMNS.  If FORECAST_COLUMNS changes, these
+    // must change.
+    public static final int COL_WEATHER_ID = 0;
+    public static final int COL_WEATHER_DATE = 1;
+    public static final int COL_WEATHER_DESC = 2;
+    public static final int COL_WEATHER_MAX_TEMP = 3;
+    public static final int COL_WEATHER_MIN_TEMP = 4;
+    public static final int COL_LOCATION_SETTING = 5;
+    public static final int COL_WEATHER_CONDITION_ID = 6;
 
     public MainActivityFragment() {
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Add this line in order for this fragment to handle menu events.
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onStart() {
+//        updateWeather();
+        super.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if( mLocation != null && !Utility.getPreferredLocation(getActivity()).equals(mLocation) ){
+            getLoaderManager().restartLoader(FORECAST_LOADER ,null , this );
+        }
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.menu_main, menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         if (id == R.id.refresh) {
             updateWeather();
+            return true;
+        }
+        if (id == R.id.action_settings) {
+            startActivity( new Intent(getActivity() , SettingsActivity.class) );
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -94,189 +118,131 @@ public class MainActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        // The ArrayAdapter will take data from a source and
+        // use it to populate the ListView it's attached to.
+
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        adapter = new ArrayAdapter<String>(
-                getActivity(),
-                android.R.layout.simple_list_item_1 ,
-                new ArrayList<String>());
+        mForecastAdapter = new SimpleCursorAdapter(
+                getActivity() ,
+                R.layout.fragment_item ,
+                null ,
+                new String[] {
+                        WeatherEntry.COLUMN_DATE ,
+                        WeatherEntry.COLUMN_SHORT_DESC ,
+                        WeatherEntry.COLUMN_MAX_TEMP ,
+                        WeatherEntry.COLUMN_MIN_TEMP
+                } ,
+                new int[] {
+                        R.id.list_item_date_tv,
+                        R.id.list_item_forecast_tv ,
+                        R.id.list_item_high_tv ,
+                        R.id.list_item_low_tv
+                } ,
+                0
+        );
 
-        ListView listView = (ListView) rootView.findViewById(R.id.list_view);
-        listView.setAdapter(adapter);
+        mForecastAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder(){
+            @Override
+            public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
+                switch (columnIndex) {
+                    case COL_WEATHER_MAX_TEMP:
+                    case COL_WEATHER_MIN_TEMP:{
+                        boolean isMetric = Utility.isMetric(getActivity());
+                        ((TextView) view).setText(Utility.formatTemperature(getActivity() ,
+                                cursor.getDouble(columnIndex) , isMetric));
+                        return true;
+                    }
+                    case COL_WEATHER_DATE: {
+                        String date = cursor.getString(columnIndex);
+                        TextView dateView = (TextView) view;
+                        dateView.setText(Utility.formatDate(date));
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        // Get a reference to the ListView, and attach this adapter to it.
+        mListView = (ListView) rootView.findViewById(R.id.list_view);
+        mListView.setAdapter(mForecastAdapter);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String item = adapter.getItem(position);
-                Intent intent = new Intent(getActivity(), DetailActivity.class);
-                intent.putExtra(Intent.EXTRA_TEXT, item);
-                startActivity(intent);
+                Intent intent = new Intent(getActivity() , DetailActivity.class);
+                SimpleCursorAdapter adapter = (SimpleCursorAdapter) parent.getAdapter();
+                Cursor cursor = adapter.getCursor();
+                if( cursor != null && cursor.moveToPosition(position) ) {
+                    Boolean isMetric = Utility.isMetric(getActivity());
+                    String forecast = String.format("%s - %s , %s / %s",
+                            Utility.formatDate(cursor.getString(COL_WEATHER_DATE)) ,
+                            cursor.getString(COL_WEATHER_DESC) ,
+                            Utility.formatTemperature(getActivity() , cursor.getDouble(COL_WEATHER_MAX_TEMP) , isMetric) ,
+                            Utility.formatTemperature(getActivity() , cursor.getDouble(COL_WEATHER_MIN_TEMP) , isMetric)
+                    );
+
+                    intent.putExtra(Intent.EXTRA_TEXT , forecast);
+                    startActivity(intent);
+
+                }
             }
         });
 
         return rootView;
-
     }
 
-    public class FetchForecastTask extends AsyncTask<String, Void, String[]> {
-        @Override
-        protected String[] doInBackground(String... params) {
-
-            String forecastResult = establishConnection(params[0]);
-
-            Log.v(ERROR_TAG, forecastResult);
-
-            try {
-                return getWeatherDataFromJSON(forecastResult);
-            } catch (JSONException j) {
-                Log.v(ERROR_TAG, " Error in get weather from json ");
-
-                j.printStackTrace();
-            }
-
-            return null;
-        }
-
-        private String[] getWeatherDataFromJSON(String forecastResult) throws JSONException {
-
-            final String OWM_LIST = "list";
-            final String OWM_WEATHER = "weather";
-            final String OWM_TEMPERATURE = "temp";
-            final String OWM_MAX = "max";
-            final String OWM_MIN = "min";
-            final String OWM_DATETIME = "dt";
-            final String OWM_DESCRIPTION = "main";
-
-            JSONObject forecastJson = new JSONObject(forecastResult);
-            JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
-
-            String[] daysArray = new String[numOfDays];
-
-            for (int i = 0; i < weatherArray.length(); i++) {
-
-                String day;
-                String description;
-                String highAndLow;
-
-                JSONObject dayForecast = weatherArray.getJSONObject(i);
-
-                long dateTime = dayForecast.getLong(OWM_DATETIME);
-                day = getReadableDateString(dateTime);
-
-                JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
-                description = weatherObject.getString(OWM_DESCRIPTION);
-
-                JSONObject tempObject = dayForecast.getJSONObject(OWM_TEMPERATURE);
-                double high = tempObject.getDouble(OWM_MAX);
-                double low = tempObject.getDouble(OWM_MIN);
-
-                highAndLow = formatHighAndLow(high, low);
-                daysArray[i] = day + "-" + description + "-" + highAndLow;
-
-            }
-
-            for (String s : daysArray) {
-                Log.v(ERROR_TAG, s);
-            }
-
-            return daysArray;
-
-        }
-
-        private String formatHighAndLow(double high, double low) {
-            long h = Math.round(high);
-            long l = Math.round(low);
-
-            String highLowStr = h + "/" + l;
-            return highLowStr;
-        }
-
-        private String establishConnection(String city) {
-
-            try {
-
-                final String baseURL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
-                final String QUERY_PARAM = "q";
-                final String FORMAT_PARAM = "mode";
-                final String UNITS_PARAM = "units";
-                final String DAYS_PARAM = "cnt";
-
-                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=London&mode=json&units=metric&cnt=7&APPID=fde6e9891517ea4889424fe0a4b6c8ee");
-
-//                Uri builtUri = Uri.parse(baseURL).buildUpon()
-//                        .appendQueryParameter(QUERY_PARAM ,city )
-//                        .appendQueryParameter(FORMAT_PARAM ,format )
-//                        .appendQueryParameter(UNITS_PARAM , units)
-//                        .appendQueryParameter(DAYS_PARAM , Integer.toString(numOfDays)).build();
-
-//                URL url = new URL(builtUri.toString());
-
-//                Log.v(ERROR_TAG , builtUri.toString());
-
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    return null;
-                }
-
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line);
-                }
-
-                if (buffer.length() == 0) {
-                    return null;
-                }
-
-                JSONforecast = buffer.toString();
-
-                return JSONforecast;
-
-            } catch (Exception e) {
-                Log.e(ERROR_TAG, " JSON main exception ");
-            } finally {
-
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                        Log.e(ERROR_TAG, " JSON exception ");
-                    }
-                }
-
-            }
-
-            return null;
-
-        }
-
-        private String getReadableDateString(long time) {
-
-            Date date = new Date(time * 1000);
-            SimpleDateFormat dateFormat = new SimpleDateFormat("E, MMM d");
-            return dateFormat.format(date);
-
-        }
-
-        @Override
-        protected void onPostExecute(String[] result) {
-            if (result != null) {
-                for (String f : result) {
-                    adapter.add(f);
-                }
-
-            }
-        }
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(FORECAST_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
     }
 
+    private void updateWeather() {
+        FetchForecastTask fetchForecastTask = new FetchForecastTask(getActivity());
+        mLocation = Utility.getPreferredLocation(getActivity());
+        fetchForecastTask.execute(mLocation);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        // This is called when a new Loader needs to be created.  This
+        // fragment only uses one loader, so we don't care about checking the id.
+
+        // To only show current and future dates, get the String representation for today,
+        // and filter the query to return weather only for dates after or including today.
+        // Only return data after today.
+        String startDate = WeatherContract.getdbDateString(new Date());
+
+        // Sort order:  Ascending, by date.
+        String sortOrder = WeatherEntry.COLUMN_DATE + " ASC";
+
+        mLocation = Utility.getPreferredLocation(getActivity());
+        Log.v("MAIN" , mLocation);
+        Uri weatherForLocationUri = WeatherEntry.buildWeatherLocationWithStartDate(
+                mLocation, startDate);
+
+        // Now create and return a CursorLoader that will take care of
+        // creating a Cursor for the data being displayed.
+        return new CursorLoader(
+                getActivity(),
+                weatherForLocationUri,
+                FORECAST_COLUMNS,
+                null,
+                null,
+                sortOrder
+        );
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mForecastAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mForecastAdapter.swapCursor(null);
+    }
 }
