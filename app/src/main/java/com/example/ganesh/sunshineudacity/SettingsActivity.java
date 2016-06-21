@@ -70,6 +70,7 @@ public class SettingsActivity extends PreferenceActivity
             if (preference.getKey().equals(getString(R.string.pref_general_location_key))) {
                 FetchForecastTask weatherTask = new FetchForecastTask(this);
                 String location = value.toString();
+                MainActivityFragment.updateLocationView( location );
                 weatherTask.execute(location);
             } else {
                 // notify code that weather may be impacted

@@ -47,7 +47,7 @@ public class WeatherProvider extends ContentProvider {
     private static final String sLocationSettingAndDaySelection =
             WeatherContract.LocationEntry.TABLE_NAME +
                     "." + WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ? AND " +
-                    WeatherContract.WeatherEntry.COLUMN_DATE + " = ? ";
+                    WeatherContract.WeatherEntry.COLUMN_DATE + " = ?";
 
     private Cursor getWeatherByLocationSetting(Uri uri, String[] projection, String sortOrder) {
         String locationSetting = WeatherContract.WeatherEntry.getLocationSettingFromUri(uri);
@@ -82,7 +82,7 @@ public class WeatherProvider extends ContentProvider {
         return sWeatherByLocationSettingQueryBuilder.query(mOpenHelper.getReadableDatabase(),
                 projection,
                 sLocationSettingAndDaySelection,
-                new String[]{locationSetting, date},
+                new String[]{locationSetting,date},
                 null,
                 null,
                 sortOrder

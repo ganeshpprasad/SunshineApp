@@ -7,39 +7,64 @@
     android:minHeight="?android:listPreferredItemHeight"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <TextView
+    <ImageView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/list_item_date_tv"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+        android:layout_height="match_parent"
+        android:layout_weight="2"
+        android:id="@+id/weather_icon_iv"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-"/>
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:layout_weight="9">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/list_item_forecast_tv"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_date_tv"
+            android:textAppearance="?android:textAppearanceMedium"
+            android:text="Today"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/list_item_high_tv"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_forecast_tv"
+            android:textAppearance="?android:textAppearanceSmall"
+            android:text="Clear"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="/"/>
+    </LinearLayout>
 
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/list_item_low_tv"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+        android:layout_height="match_parent"
+        android:layout_weight="3"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_high_tv"
+            android:layout_gravity="center_horizontal"
+            android:textAppearance="?android:textAppearanceMedium"
+            android:text="24"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/list_item_low_tv"
+            android:layout_gravity="center_horizontal"
+            android:textAppearance="?android:textAppearanceSmall"
+            android:text="17"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"/>
+
+    </LinearLayout>
 
 </LinearLayout>
 

@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.ganesh.sunshineudacity.data.WeatherContract;
@@ -18,36 +19,75 @@ import org.w3c.dom.Text;
  */
 public class ForecastAdapter extends CursorAdapter {
 
+    private static final int TYPE_TODAY = 0;
+    private static final int TYPE_FUTURE_DAY = 1;
+
     public ForecastAdapter(Context context, Cursor cursor, int flags) {
         super(context, cursor, flags);
     }
 
     @Override
+    public int getItemViewType(int position) {
+        return ( position == 0 ) ? TYPE_TODAY : TYPE_FUTURE_DAY;
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return 2;
+    }
+
+    @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
-        Log.v("ADAPTER" , "may be");
-        return LayoutInflater.from(context).inflate(R.layout.fragment_item , parent , false);
+
+        int view = getItemViewType(cursor.getPosition());
+        int layoutId;
+
+        if (view == 0) {
+            layoutId = R.layout.fragment_item_today;
+        } else {
+            layoutId = R.layout.fragment_item;
+        }
+
+        return LayoutInflater.from(context).inflate(layoutId , parent , false);
     }
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
 
+        int viewType = getItemViewType( cursor.getPosition() );
+
         TextView date = (TextView) view.findViewById(R.id.list_item_date_tv);
         TextView forecast = (TextView) view.findViewById(R.id.list_item_forecast_tv);
         TextView high = (TextView) view.findViewById(R.id.list_item_high_tv);
         TextView low = (TextView) view.findViewById(R.id.list_item_low_tv);
+        ImageView imageView = (ImageView) view.findViewById(R.id.weather_icon_iv);
 
-        String date_str = cursor.getString(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_DATE));
-        String forecast_str = cursor.getString(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_SHORT_DESC));
-        String max_str = cursor.getString(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP));
-        String min_str = cursor.getString(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP));
+        switch (viewType) {
 
-        Log.v("ADAPTER" , date_str);
-        Log.v("ADAPTER" , max_str);
+            case TYPE_TODAY : imageView.setImageResource( Utility.getArtResourceForWeatherCondition(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID))
+            ) );
+                break;
+            case TYPE_FUTURE_DAY : imageView.setImageResource(Utility.getIconResourceForWeatherCondition(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID))
+            ));
 
-        date.setText("Bullshit");
+        }
+
+        String date_str = cursor.getString(MainActivityFragment.COL_WEATHER_DATE);
+        String forecast_str = cursor.getString(MainActivityFragment.COL_WEATHER_DESC);
+        Double max_str = cursor.getDouble(MainActivityFragment.COL_WEATHER_MAX_TEMP);
+        Double min_str = cursor.getDouble(MainActivityFragment.COL_WEATHER_MIN_TEMP);
+
+        boolean isMetric = Utility.isMetric(context);
+
+        String date_format = Utility.getFriendlyDayString(context,date_str);
+
+
+        date.setText(date_format);
         forecast.setText(forecast_str);
-        high.setText(max_str);
-        low.setText(min_str);
+        high.setText(Utility.formatTemperature(context , max_str , isMetric));
+        low.setText(Utility.formatTemperature(context , min_str , isMetric));
 
     }
 }
