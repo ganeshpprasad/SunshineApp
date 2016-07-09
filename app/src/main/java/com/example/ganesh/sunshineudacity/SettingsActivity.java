@@ -11,6 +11,9 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.example.ganesh.sunshineudacity.data.WeatherContract;
+import com.example.ganesh.sunshineudacity.service.WeatherService;
+import com.example.ganesh.sunshineudacity.sync.SunshineSyncAdapter;
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings.
  * <p>
@@ -48,7 +51,6 @@ public class SettingsActivity extends PreferenceActivity
 
         // Set the listener to watch for value changes.
         preference.setOnPreferenceChangeListener(this);
-        Log.v("Settings" , "OnBind");
         // Trigger the listener immediately with the preference's
         // current value.
         onPreferenceChange(preference,
@@ -63,15 +65,13 @@ public class SettingsActivity extends PreferenceActivity
     public boolean onPreferenceChange(Preference preference, Object value) {
         String stringValue = value.toString();
 
-        Log.v("Settings" , "OnChange");
-
         // are we starting the preference activity?
         if (!mBindingPreference) {
             if (preference.getKey().equals(getString(R.string.pref_general_location_key))) {
-                FetchForecastTask weatherTask = new FetchForecastTask(this);
+
                 String location = value.toString();
                 MainActivityFragment.updateLocationView( location );
-                weatherTask.execute(location);
+                SunshineSyncAdapter.syncImmediately(this);
             } else {
                 // notify code that weather may be impacted
                 getContentResolver().notifyChange(WeatherContract.WeatherEntry.CONTENT_URI, null);

@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.ganesh.sunshineudacity.sync.SunshineSyncAdapter;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -23,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
             getSupportFragmentManager().beginTransaction().add(R.id.container , new MainActivityFragment()).commit();
         }
 
+        SunshineSyncAdapter.initializeSyncAdapter(this);
     }
 
 }

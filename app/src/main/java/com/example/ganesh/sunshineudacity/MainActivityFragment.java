@@ -27,10 +27,14 @@ import android.widget.TextView;
 import com.example.ganesh.sunshineudacity.data.WeatherContract;
 import com.example.ganesh.sunshineudacity.data.WeatherContract.WeatherEntry;
 import com.example.ganesh.sunshineudacity.data.WeatherContract.LocationEntry;
+import com.example.ganesh.sunshineudacity.service.WeatherService;
+import com.example.ganesh.sunshineudacity.sync.SunshineSyncAdapter;
 
 import org.w3c.dom.Text;
 
 import java.util.Date;
+
+import static com.example.ganesh.sunshineudacity.service.WeatherService.*;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link android.widget.ListView} layout.
@@ -42,6 +46,8 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     private String mLocation;
     private ListView mListView;
     private static TextView mLocationView;
+
+    private static final String LOG_TAG = "MAinActivity Fragment";
 
     // For the forecast view we're showing only a small subset of the stored data.
     // Specify the columns we need.
@@ -84,7 +90,6 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
 
     @Override
     public void onStart() {
-//        updateWeather();
         super.onStart();
     }
 
@@ -112,6 +117,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.refresh) {
+            Log.d(LOG_TAG , "Before call to update weather");
             updateWeather();
             return true;
         }
@@ -166,9 +172,7 @@ public class MainActivityFragment extends Fragment implements LoaderManager.Load
     }
 
     private void updateWeather() {
-        FetchForecastTask fetchForecastTask = new FetchForecastTask(getActivity());
-        mLocation = Utility.getPreferredLocation(getActivity());
-        fetchForecastTask.execute(mLocation);
+        SunshineSyncAdapter.syncImmediately(getActivity());
     }
 
     @Override

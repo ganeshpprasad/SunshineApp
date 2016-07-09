@@ -9,11 +9,16 @@ import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.view.MenuItemCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.support.v7.widget.ShareActionProvider;
 import android.widget.TextView;
 
 import com.example.ganesh.sunshineudacity.data.WeatherContract;
@@ -33,6 +38,7 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
 
     private String mLocation;
     private String mForecastStr;
+    private ShareActionProvider mShareActionProvider;
     private static final String FORECAST_SHARE_HASHTAG = "#SunshineApp";
 
     //columns to query in cursor
@@ -64,6 +70,16 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
     TextView humidity_tv ;
     TextView wind_speed_tv ;
     TextView direction_tv ;
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_detail , menu);
+        MenuItem shareItem = menu.findItem(R.id.share_detail);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
+        if (mForecastStr != null) {
+            mShareActionProvider.setShareIntent(createshareForecastIntent());
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

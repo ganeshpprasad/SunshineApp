@@ -21,6 +21,7 @@ public class ForecastAdapter extends CursorAdapter {
 
     private static final int TYPE_TODAY = 0;
     private static final int TYPE_FUTURE_DAY = 1;
+    public static final String LOG_TAG = "Forecast Adapter";
 
     public ForecastAdapter(Context context, Cursor cursor, int flags) {
         super(context, cursor, flags);
@@ -74,7 +75,8 @@ public class ForecastAdapter extends CursorAdapter {
 
         }
 
-        String date_str = cursor.getString(MainActivityFragment.COL_WEATHER_DATE);
+        Long date_str = cursor.getLong(MainActivityFragment.COL_WEATHER_DATE);
+
         String forecast_str = cursor.getString(MainActivityFragment.COL_WEATHER_DESC);
         Double max_str = cursor.getDouble(MainActivityFragment.COL_WEATHER_MAX_TEMP);
         Double min_str = cursor.getDouble(MainActivityFragment.COL_WEATHER_MIN_TEMP);

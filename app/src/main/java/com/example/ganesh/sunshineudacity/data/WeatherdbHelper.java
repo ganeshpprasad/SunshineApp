@@ -32,7 +32,7 @@ public class WeatherdbHelper extends SQLiteOpenHelper {
         final String SQL_CREATE_WEATHER_TABLE = "CREATE TABLE " + WeatherEntry.TABLE_NAME + "(" +
                 WeatherEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 WeatherEntry.COLUMN_LOC_KEY + " INTEGER NOT NULL," +
-                WeatherEntry.COLUMN_DATE + " TEXT NOT NULL," +
+                WeatherEntry.COLUMN_DATE + " INTEGER NOT NULL," +
                 WeatherEntry.COLUMN_SHORT_DESC + " TEXT NOT NULL," +
                 WeatherEntry.COLUMN_WEATHER_ID + " INTEGER NOT NULL," +
 
